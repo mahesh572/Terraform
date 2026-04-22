@@ -8,9 +8,11 @@ variable "ami_id" {
 }
 
 variable "key_name" {
-  description = "Existing EC2 key pair name"
+  description = "EC2 key pair name"
+  default     = "bgv2-key"
 }
 
 variable "private_key_path" {
   description = "Path to .pem file"
+  default     = "C:/Users/P01MAHESHG/Downloads/bgv2-key.pem"
 }
