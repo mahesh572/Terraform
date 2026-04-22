@@ -1,3 +1,3 @@
-output "ec2_public_ip" {
-  value = aws_instance.free_tier_ec2.public_ip
+output "public_ip" {
+  value = aws_instance.bgv_ec2.public_ip
 }

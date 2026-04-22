@@ -2,14 +2,28 @@ provider "aws" {
   region = var.aws_region
 }
 
-resource "aws_security_group" "ssh" {
-  name = "allow-ssh"
+resource "aws_security_group" "bgv_sg" {
+  name = "bgv-sg"
 
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # restrict to your IP in real use
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 3000
+    to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -20,40 +34,33 @@ resource "aws_security_group" "ssh" {
   }
 }
 
-resource "aws_instance" "free_tier_ec2" {
-  ami           = var.ami_id
-  instance_type = "t3.micro"   # ✅ Free tier
-  key_name      = var.key_name
-  security_groups = [aws_security_group.ssh.name]
+resource "aws_instance" "bgv_ec2" {
+  ami                         = var.ami_id
+  instance_type              = "t3.micro"
+  key_name                   = var.key_name
+  associate_public_ip_address = true
+  vpc_security_group_ids     = [aws_security_group.bgv_sg.id]
+
+  user_data = file("user-data.sh")
 
   tags = {
-    Name = "amazon-linux-free-tier"
+    Name = "bgv-app"
   }
-
-  # Copy file to EC2
+  
+  
   provisioner "file" {
-    source      = "files/hello.txt"
-    destination = "/home/ec2-user/hello.txt"
-
-    connection {
-      type        = "ssh"
-      user        = "ec2-user"
-      private_key = file(var.private_key_path)
-      host        = self.public_ip
-    }
+  source      = "./app"
+  destination = "/home/ec2-user/app"  
+  
+  connection {
+    type        = "ssh"
+    user        = "ec2-user"
+    private_key = file(var.private_key_path)
+    host        = self.public_ip
   }
+}
 
-  # Optional: run command
-  provisioner "remote-exec" {
-    inline = [
-      "cat /home/ec2-user/hello.txt"
-    ]
 
-    connection {
-      type        = "ssh"
-      user        = "ec2-user"
-      private_key = file(var.private_key_path)
-      host        = self.public_ip
-    }
-  }
+  
+  
 }
